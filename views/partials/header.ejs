@@ -51,17 +51,120 @@
         height: 5rem;
         background-color: #f6f7eb;
         margin: 2rem 2rem;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 1rem;
+
+        border-radius: 4px;
+        box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+    }
+
+    #type {
+        font-size: 2rem;
+        user-select: none;
+        color: #393e41;
+        letter-spacing: 1px;
+    }
+
+    .val {
+        font-size: 2rem;
+        color: #393e41;
+        font-weight: 500;
+    }
+
+    #copy-btn {
+        background-color: #a92815;
+        padding: 1rem 2rem;
+        color: #f6f7eb;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
+    }
+
+    #copy-btn:hover {
+        background-color: #cd4732;
+    }
+
+
+    #snackbar {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color: #AC1754;
+        color: #fff;
+        font-weight: 500;
+        letter-spacing: 2px;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1;
+        left: 50%;
+        bottom: 30px;
+    }
+
+    #snackbar.show {
+        visibility: visible;
+
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+
+
+
+    @keyframes fadein {
+        from {
+            bottom: 0;
+            opacity: 0;
+        }
+
+        to {
+            bottom: 30px;
+            opacity: 1;
+        }
+    }
+
+
+
+    @keyframes fadeout {
+        from {
+            bottom: 30px;
+            opacity: 1;
+        }
+
+        to {
+            bottom: 0;
+            opacity: 0;
+        }
     }
 </style>
+<link ref="stylesheet" type="text/css" href="dist/snackbar.min.css" />
+<script src="dist/snackbar.min.js"></script>
 
 <div id="header" class="row">
     <span id="title">RANDOM COLOR GENERATOR</span>
     <div id="button" onclick="generateColor()">GENERATE</div>
 </div>
 <div id="main">
-    <div id="block">RGB</div>
-    <div id="block">HEX</div>
-    <div id="block">HSL</div>
+    <div id="block">
+        <span id="type">RGB</span>
+        <span class="val" id="RGBValue"></span>
+        <span onclick="rgbCopyButton()" id="copy-btn">COPY</span>
+    </div>
+    <div id="block">
+        <span id="type">HEX</span>
+        <span class="val" id="HEXValue"></span>
+        <span onclick="hexCopyButton()" id="copy-btn">COPY</span>
+    </div>
+    <div id="block">
+        <span id="type">HSL</span>
+        <span class="val" id="HSLValue"></span>
+        <span onclick="hslCopyButton()" id="copy-btn">COPY</span>
+    </div>
+
+    <div class="snackbar" id="snackbar">COPIED</div>
 </div>
 
 <script>
@@ -73,35 +176,82 @@
         var val2 = Math.floor(Math.random() * 256);
         var val3 = Math.floor(Math.random() * 256);
 
+        var rgbvalue = generateRGB(val1, val2, val3)
+        document.getElementById("RGBValue").innerHTML = rgbvalue;
 
-        document.getElementById("main").style.backgroundColor = `rgb(${val1},${val2},${val3})`;
+        var hexValue = generateHEX(val1, val2, val3)
+        document.getElementById("HEXValue").innerHTML = hexValue;
 
-        var hexValue = `#${val1.toString(16)}${val2.toString(16)}${val2.toString(16)}`;
-        console.log(hexValue);
+        var hslValue = generateHSL(hexValue);
+        document.getElementById("HSLValue").innerHTML = hslValue;
 
-        var hslValue = generateHSL(Math.floor(val1) , Math.floor(val2), Math.floor(val3));
-        console.log(hslValue)
+    }
+    function rgbCopyButton() {
+        var copyText = document.getElementById("RGBValue").innerText;
+        navigator.clipboard.writeText(copyText);
+        showSnackbar()
+
     }
 
-    function generateHSL(r, g, b) {
-        r /= 255;
-        g /= 255;
-        b /= 255;
-        const l = Math.max(r, g, b);
-        const s = l - Math.min(r, g, b);
-        const h = s
-            ? l === r
-                ? (g - b) / s
-                : l === g
-                    ? 2 + (b - r) / s
-                    : 4 + (r - g) / s
-            : 0;
-        return [
-            60 * h < 0 ? 60 * h + 360 : 60 * h,
-            100 * (s ? (l <= 0.5 ? s / (2 * l - s) : s / (2 - (2 * l - s))) : 0),
-            (100 * (2 * l - s)) / 2,
-        ];
+    function hexCopyButton() {
+        var copyText = document.getElementById("HEXValue").innerText;
+        navigator.clipboard.writeText(copyText);
+        showSnackbar()
+    }
+    function hslCopyButton() {
+        var copyText = document.getElementById("HSLValue").innerText;
+        navigator.clipboard.writeText(copyText);
+        showSnackbar()
+    }
 
+    function generateRGB(val1, val2, val3) {
+        return document.getElementById("main").style.backgroundColor = `rgb(${val1},${val2},${val3})`;
+    }
+
+    function generateHEX(val1, val2, val3) {
+        return `#${val1.toString(16)}${val2.toString(16)}${val2.toString(16)}`;
+    }
+
+
+    function generateHSL(hexValue) {
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexValue);
+
+        var r = parseInt(result[1], 16);
+        var g = parseInt(result[2], 16);
+        var b = parseInt(result[3], 16);
+
+        r /= 255, g /= 255, b /= 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+        var h, s, l = (max + min) / 2;
+
+        if (max == min) {
+            h = s = 0; // achromatic
+        } else {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+
+        s = s * 100;
+        s = Math.round(s);
+        l = l * 100;
+        l = Math.round(l);
+        h = Math.round(360 * h)
+
+        var colorInHSL = 'hsl(' + h + ', ' + s + '%, ' + l + '%)';
+        return colorInHSL;
+    }
+
+    function showSnackbar() {
+        var x = document.getElementById("snackbar")
+
+        x.className = "show";
+        setTimeout(function () { x.className = x.className.replace("show", ""); }, 2000);
     }
 
 </script>
